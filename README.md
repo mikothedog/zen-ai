@@ -1,6 +1,6 @@
 # zen-ai
 
-talks to robots on your computer.
+talks to robots.
 
 minimal Rosé-Pine-Moon chat ui with optional web search.
 
@@ -28,6 +28,8 @@ type `!` before a message to search the web.
 | `ctrl+j` | scroll down |
 | `ctrl+k` | scroll up |
 | `ctrl+g` | go to bottom |
+
+vim vim vim
 
 ## need
 
