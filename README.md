@@ -1,79 +1,54 @@
-# 🧘 zen-ai
+```
+                          __
+     _   ___  __ _  ___  / _| __ _  __ _
+    | | | \ \/ _` |/ _ \| |_ / _` |/ _` |
+    | |_| |> (_| |  __/|  _| (_| | (_| |
+     \__,_/_|\__,_|\___||_|  \__,_|\__, (_)
+       ____ _____ ___              |___/
+      |___ \___ \__ \
+        __) |__) | ) |
+       / __/ __/ / / /
+      |_____|_____|_\_\
+```
 
-Lightweight local AI chat app with a WebView GUI, Rofi launcher, and optional web search.
+# zen-ai
 
-Powered by [Ollama](https://ollama.ai).
+talks to robots on your computer. no cloud. no ads. just you, ollama, and questionable life choices.
 
-## ✨ Features
+## do
 
-- **Minimal WebView UI** — no browser tabs, no bloat
-- **Streaming responses** — real-time token-by-token output
-- **Math rendering** — LaTeX via KaTeX (`\[ ... \]` / `\( ... \)`)
-- **Web search** — prefix any message with `!` to pull DuckDuckGo results
-- **Copy buttons** — hover on code blocks or messages to copy
-- **Model picker** — dropdown to switch Ollama models
-- **Keyboard shortcuts** — `Ctrl+L` focus input, `Ctrl+J`/`Ctrl+K` scroll, `Ctrl+G` bottom
-- **Rofi launcher** — quick prompt from anywhere
-
-## 🚀 Quick start
-
-```sh
+```
 ./install.sh
+zen-ai
+zen-ai "why is the sky blue (lie to me)"
 ```
 
-Or manually:
+## ! search
 
-```sh
-go build -mod=vendor -o zen-ai .
-sudo cp zen-ai /usr/local/bin/
-```
-
-Requires: `go`, `webkit2gtk-4.1`, `ollama` running on `localhost:11434`.
-
-## ⌨️ Usage
-
-```sh
-zen-ai                        # open empty chat
-zen-ai "what is the meaning of life?"  # open with initial prompt
-```
-
-## 🔍 Web search
-
-Start a message with `!` to search the web:
+type `!` before your message and it googles for you (duckduckgo actually but whatever)
 
 ```
-!what is the capital of France
-!weather in Tokyo
-!latest AI news
+!how do i delete system32
+!best pizza toppings (fight me)
 ```
 
-The model receives search results as context and answers based on them.
+the robot will read the results and pretend it knew all along.
 
-> **Note:** Web search queries DuckDuckGo's public HTML results page. This is a personal-use, rate-limited client. Not affiliated with DuckDuckGo.
+## keys
 
-## 🎨 Theme
+| key | does |
+|-----|------|
+| `ctrl+l` | puts cursor in box |
+| `ctrl+j` | scroll down (lazy) |
+| `ctrl+k` | scroll up (even lazier) |
+| `ctrl+g` | scroll to bottom (desperation) |
 
-Built with [Rosé Pine Moon](https://rosepinetheme.com) colors.
+## need
 
-## 📁 Project structure
+- go
+- webkit2gtk-4.1
+- ollama running somewhere on port 11434
 
-```
-main.go          # entry point, WebView, signals
-config.go        # constants
-types.go         # shared types
-handlers.go      # HTTP handlers
-ollama.go        # Ollama API client
-search.go        # DuckDuckGo search
-search_test.go   # search tests
-static/          # frontend (app.js, style.css, index.html)
-static/katex/    # KaTeX for LaTeX rendering
-install.sh       # install script
-launch.sh        # Rofi launcher
-```
+## fine print
 
-## 🧪 Tests
-
-```sh
-go test -mod=vendor -short ./...
-npm install --dev && node --test static/app.test.js
-```
+the search thing scrapes duckduckgo html. it's rate-limited and for personal use. they have better things to do than sue you.
