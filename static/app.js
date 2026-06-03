@@ -1,4 +1,9 @@
 const DEFAULT_MODEL = 'deepseek-r1:14b';
+const COPY_FEEDBACK_DURATION = 2000;
+const SCROLL_THRESHOLD = 80;
+const SCROLL_STEP = 200;
+const INPUT_MAX_HEIGHT = 200;
+const STREAM_INIT_DELAY = 400;
 
 let currentModel = DEFAULT_MODEL;
 let abortController = null;
@@ -9,9 +14,8 @@ const chatContainer = document.getElementById('chat');
 const loadingEl = document.getElementById('loading');
 const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('send');
-const modelSelect = document.getElementById('model-select');
-
-const SCROLL_THRESHOLD = 80;
+const dropdownToggle = document.querySelector('.dropdown-toggle');
+const dropdownMenu = document.querySelector('.dropdown-menu');
 
 function isNearBottom() {
   return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight - SCROLL_THRESHOLD;
@@ -27,6 +31,10 @@ function scrollToBottomForce() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+chatContainer.addEventListener('wheel', () => {
+  nearBottom = false;
+});
+
 chatContainer.addEventListener('scroll', () => {
   nearBottom = isNearBottom();
 });
@@ -40,11 +48,17 @@ function escapeHtml(text) {
 function renderMarkdown(text) {
   let html = escapeHtml(text);
 
+  const codeBlocks = [];
+  let idx = 0;
   html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-    return `<pre><code>${escapeHtml(code)}</code></pre>`;
+    const placeholder = `\x00CODE${idx}\x00`;
+    codeBlocks.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
+    idx++;
+    return placeholder;
   });
 
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
@@ -54,7 +68,11 @@ function renderMarkdown(text) {
   html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
   html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
 
-  html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+  html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" class="external-link">$1</a>');
+
+  html = html.replace(/\x00CODE(\d+)\x00/g, (_, i) => {
+    return codeBlocks[parseInt(i)] || _;
+  });
 
   const lines = html.split('\n\n');
   return lines.map(line => {
@@ -65,11 +83,72 @@ function renderMarkdown(text) {
   }).join('\n');
 }
 
+async function copyToClipboard(text, button) {
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = 'Copied!';
+    button.classList.add('copied');
+    setTimeout(() => {
+      button.textContent = 'Copy';
+      button.classList.remove('copied');
+    }, COPY_FEEDBACK_DURATION);
+  } catch {
+    button.textContent = 'Failed';
+  }
+}
+
+function addCodeCopyButtons(el) {
+  el.querySelectorAll('pre').forEach(pre => {
+    if (pre.parentElement.classList.contains('code-block-wrap')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    const btn = document.createElement('button');
+    btn.className = 'copy-code-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyToClipboard(pre.textContent, btn);
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function addMessageActions(el) {
+  if (el.querySelector('.message-actions')) return;
+  const actions = document.createElement('div');
+  actions.className = 'message-actions';
+  const copyBtn = document.createElement('button');
+  const content = el.dataset.content || el.textContent;
+  copyBtn.textContent = 'Copy';
+  copyBtn.addEventListener('click', () => copyToClipboard(content, copyBtn));
+  actions.appendChild(copyBtn);
+  el.appendChild(actions);
+}
+
+function renderMath(el) {
+  if (typeof renderMathInElement !== 'function') return;
+  try {
+    renderMathInElement(el, {
+      delimiters: [
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false },
+      ],
+      ignoredTags: ['pre', 'code'],
+    });
+  } catch (_) {}
+}
+
 function addMessage(role, content) {
   const el = document.createElement('div');
   el.className = 'message ' + role;
+  el.dataset.content = content;
   if (role === 'assistant') {
     el.innerHTML = renderMarkdown(content) || '\u200B';
+    renderMath(el);
+    addCodeCopyButtons(el);
+    addMessageActions(el);
   } else {
     el.textContent = content;
   }
@@ -84,16 +163,61 @@ function updateLastMessage(content) {
     last = addMessage('assistant', '');
   }
   last.innerHTML = renderMarkdown(content) || '\u200B';
+  last.dataset.content = content;
+  renderMath(last);
+  addCodeCopyButtons(last);
+  addMessageActions(last);
   if (nearBottom) scrollToBottomForce();
 }
 
-function setLoading(v) {
-  loadingEl.classList.toggle('hidden', !v);
+function setLoading(show) {
+  loadingEl.classList.toggle('hidden', !show);
 }
 
 function toggleInput(disabled) {
   inputEl.disabled = disabled;
   sendBtn.disabled = disabled;
+}
+
+function collectMessages() {
+  const messages = [];
+  document.querySelectorAll('.message').forEach(el => {
+    const role = el.classList.contains('user') ? 'user' : 'assistant';
+    messages.push({ role, content: el.textContent });
+  });
+  return messages;
+}
+
+async function readStream(reader, decoder, onChunk) {
+  let buf = '';
+  let full = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop() || '';
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const chunk = JSON.parse(line);
+        full += chunk.content;
+        onChunk(full, chunk.done);
+        if (chunk.done) break;
+      } catch (_) {}
+    }
+  }
+
+  if (buf.trim()) {
+    try {
+      const chunk = JSON.parse(buf);
+      full += chunk.content;
+      onChunk(full, chunk.done);
+    } catch (_) {}
+  }
 }
 
 async function sendMessage(content) {
@@ -108,17 +232,11 @@ async function sendMessage(content) {
   setLoading(true);
   toggleInput(true);
 
-  const msgs = [];
-  document.querySelectorAll('.message').forEach(el => {
-    const role = el.classList.contains('user') ? 'user' : 'assistant';
-    msgs.push({ role, content: el.textContent });
-  });
-
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: currentModel, messages: msgs }),
+      body: JSON.stringify({ model: currentModel, messages: collectMessages() }),
       signal: abortController.signal,
     });
 
@@ -129,35 +247,10 @@ async function sendMessage(content) {
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buf = '';
-    let full = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const chunk = JSON.parse(line);
-          full += chunk.content;
-          updateLastMessage(full);
-          if (chunk.done) break;
-        } catch (_) {}
-      }
-    }
-
-    if (buf.trim()) {
-      try {
-        const chunk = JSON.parse(buf);
-        full += chunk.content;
-        updateLastMessage(full);
-      } catch (_) {}
-    }
+    await readStream(reader, decoder, (full, done) => {
+      updateLastMessage(full);
+    });
   } catch (err) {
     if (err.name !== 'AbortError') {
       updateLastMessage('Error: ' + err.message);
@@ -170,44 +263,59 @@ async function sendMessage(content) {
   abortController = null;
 }
 
+function setModel(name) {
+  currentModel = name;
+  dropdownToggle.textContent = name;
+  dropdownMenu.querySelectorAll('li').forEach(li => {
+    li.classList.toggle('active', li.dataset.model === name);
+  });
+  dropdownMenu.classList.remove('open');
+}
+
 async function loadModels() {
   try {
     const res = await fetch('/api/models');
     if (!res.ok) throw new Error('Failed to fetch models');
     const models = await res.json();
-    modelSelect.innerHTML = '';
+    dropdownMenu.innerHTML = '';
     if (models.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = DEFAULT_MODEL;
-      opt.textContent = DEFAULT_MODEL + ' (not found)';
-      modelSelect.appendChild(opt);
+      const li = document.createElement('li');
+      li.textContent = DEFAULT_MODEL + ' (not found)';
+      li.dataset.model = DEFAULT_MODEL;
+      dropdownMenu.appendChild(li);
+      setModel(DEFAULT_MODEL);
       return;
     }
     models.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.name;
-      opt.textContent = m.name;
-      if (m.name === DEFAULT_MODEL) opt.selected = true;
-      modelSelect.appendChild(opt);
+      const li = document.createElement('li');
+      li.textContent = m.name;
+      li.dataset.model = m.name;
+      li.addEventListener('click', () => setModel(m.name));
+      dropdownMenu.appendChild(li);
     });
-    currentModel = modelSelect.value;
+    setModel(DEFAULT_MODEL);
   } catch (e) {
     console.error('Failed to load models:', e);
-    const opt = document.createElement('option');
-    opt.value = DEFAULT_MODEL;
-    opt.textContent = DEFAULT_MODEL;
-    opt.selected = true;
-    modelSelect.appendChild(opt);
+    const li = document.createElement('li');
+    li.textContent = DEFAULT_MODEL;
+    li.dataset.model = DEFAULT_MODEL;
+    dropdownMenu.appendChild(li);
+    setModel(DEFAULT_MODEL);
   }
 }
 
-modelSelect.addEventListener('change', () => {
-  currentModel = modelSelect.value;
+dropdownToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  dropdownMenu.classList.toggle('open');
+});
+
+document.addEventListener('click', () => {
+  dropdownMenu.classList.remove('open');
 });
 
 inputEl.addEventListener('input', () => {
   inputEl.style.height = 'auto';
-  inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + 'px';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, INPUT_MAX_HEIGHT) + 'px';
 });
 
 inputEl.addEventListener('keydown', (e) => {
@@ -226,18 +334,38 @@ document.addEventListener('keydown', (e) => {
     switch (e.key) {
       case 'l':
         e.preventDefault();
+        e.stopPropagation();
         inputEl.focus();
         break;
       case 'j':
         e.preventDefault();
-        chatContainer.scrollBy({ top: 200, behavior: 'smooth' });
+        e.stopPropagation();
+        chatContainer.scrollTop += SCROLL_STEP;
         nearBottom = isNearBottom();
+        break;
+      case 'g':
+        e.preventDefault();
+        e.stopPropagation();
+        scrollToBottomForce();
         break;
       case 'k':
         e.preventDefault();
-        chatContainer.scrollBy({ top: -200, behavior: 'smooth' });
+        e.stopPropagation();
+        chatContainer.scrollTop -= SCROLL_STEP;
         nearBottom = false;
         break;
+    }
+  }
+});
+
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a.external-link');
+  if (link && link.href) {
+    e.preventDefault();
+    if (typeof openURL === 'function') {
+      openURL(link.href);
+    } else {
+      window.open(link.href, '_blank');
     }
   }
 });
@@ -250,6 +378,6 @@ window.addEventListener('beforeunload', () => {
 });
 
 if (initialQuery) {
-  setTimeout(() => sendMessage(initialQuery), 400);
+  setTimeout(() => sendMessage(initialQuery), STREAM_INIT_DELAY);
   history.replaceState(null, '', '/');
 }

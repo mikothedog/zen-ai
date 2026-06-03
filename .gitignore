@@ -1,0 +1,6 @@
+/zen-ai
+/node_modules/
+.idea/
+.vscode/
+*.swp
+*.swo

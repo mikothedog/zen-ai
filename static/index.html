@@ -4,13 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>zen-ai</title>
+<link rel="stylesheet" href="/katex/katex.min.css">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <div id="app">
   <header>
     <h1>zen-ai</h1>
-    <select id="model-select"></select>
+    <div id="model-select" class="dropdown">
+      <button class="dropdown-toggle"></button>
+      <ul class="dropdown-menu"></ul>
+    </div>
   </header>
   <main id="chat">
     <div id="messages"></div>
@@ -23,6 +27,8 @@
     <button id="send" disabled>Send</button>
   </footer>
 </div>
+<script src="/katex/katex.min.js"></script>
+<script src="/katex/auto-render.min.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

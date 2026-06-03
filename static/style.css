@@ -51,19 +51,73 @@ header h1 {
   color: var(--rose);
 }
 
-#model-select {
+.dropdown {
+  position: relative;
+}
+
+.dropdown-toggle {
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--overlay);
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 2rem 0.5rem 1rem;
   font-size: 0.875rem;
   cursor: pointer;
   outline: none;
+  white-space: nowrap;
+  position: relative;
 }
 
-#model-select:focus {
+.dropdown-toggle::after {
+  content: "";
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  margin-top: -2px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+}
+
+.dropdown-toggle:focus {
   border-color: var(--pine);
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--overlay);
+  border-radius: 8px;
+  padding: 0.25rem 0;
+  list-style: none;
+  min-width: 100%;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-menu.open {
+  display: block;
+}
+
+.dropdown-menu li {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdown-menu li:hover {
+  background: var(--overlay);
+}
+
+.dropdown-menu li.active {
+  color: var(--rose);
+  background: var(--overlay);
 }
 
 #chat {
@@ -76,6 +130,19 @@ header h1 {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--overlay) transparent;
+}
+
+#chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#chat::-webkit-scrollbar-thumb {
+  background: var(--overlay);
+  border-radius: 4px;
 }
 
 #messages {
@@ -177,6 +244,82 @@ header h1 {
 
 .message a:hover {
   text-decoration: underline;
+}
+
+.code-block-wrap {
+  position: relative;
+  margin: 0.5rem 0;
+}
+
+.code-block-wrap pre {
+  margin: 0;
+}
+
+.copy-code-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--overlay);
+  color: var(--subtle);
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.code-block-wrap:hover .copy-code-btn {
+  opacity: 1;
+}
+
+.copy-code-btn:hover {
+  color: var(--text);
+  background: var(--muted);
+}
+
+.copy-code-btn.copied {
+  color: var(--foam);
+  border-color: var(--foam);
+  opacity: 1;
+}
+
+.message-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.message-actions button {
+  background: none;
+  border: 1px solid var(--overlay);
+  color: var(--subtle);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.message-actions button:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.message-actions button.copied {
+  color: var(--foam);
+  border-color: var(--foam);
 }
 
 #loading {
