@@ -13,7 +13,9 @@
 
 # zen-ai
 
-talks to robots on your computer. no cloud. no ads. just you, ollama, and questionable life choices.
+talks to robots on your computer.
+
+minimal chat ui, streaming responses, optional web search, math rendering, copy buttons, keyboard shortcuts, model picker, rofi launcher, and a general disregard for your productivity.
 
 ## do
 
@@ -25,30 +27,24 @@ zen-ai "why is the sky blue (lie to me)"
 
 ## ! search
 
-type `!` before your message and it googles for you (duckduckgo actually but whatever)
+type `!` before a message to search the web.
 
 ```
 !how do i delete system32
 !best pizza toppings (fight me)
 ```
 
-the robot will read the results and pretend it knew all along.
-
 ## keys
 
 | key | does |
 |-----|------|
 | `ctrl+l` | puts cursor in box |
-| `ctrl+j` | scroll down (lazy) |
-| `ctrl+k` | scroll up (even lazier) |
-| `ctrl+g` | scroll to bottom (desperation) |
+| `ctrl+j` | scroll down |
+| `ctrl+k` | scroll up |
+| `ctrl+g` | go to bottom |
 
 ## need
 
 - go
 - webkit2gtk-4.1
-- ollama running somewhere on port 11434
-
-## fine print
-
-the search thing scrapes duckduckgo html. it's rate-limited and for personal use. they have better things to do than sue you.
+- ollama on localhost:11434
