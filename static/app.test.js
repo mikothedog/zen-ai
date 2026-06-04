@@ -309,9 +309,18 @@ describe('selectModelForMode', () => {
     assert.equal(result, 'gemma:7b');
   });
 
-  it('should fallback to DEFAULT_MODEL if no models', () => {
+  it('should return empty string when no models', () => {
     const result = window.selectModelForMode('ask', []);
-    assert.equal(result, 'deepseek-r1:14b');
+    assert.equal(result, '');
+  });
+
+  it('should pick from models list without hardcoded names', () => {
+    const models = [
+      { name: 'custom-model:latest' },
+      { name: 'another-model:7b' },
+    ];
+    const result = window.selectModelForMode(null, models);
+    assert.equal(result, 'custom-model:latest');
   });
 });
 
@@ -344,6 +353,18 @@ describe('parseModeFromQuery', () => {
     const result = window.parseModeFromQuery('');
     assert.equal(result.mode, null);
     assert.equal(result.query, '');
+  });
+
+  it('should not parse prefix without trailing space', () => {
+    const result = window.parseModeFromQuery(':code');
+    assert.equal(result.mode, null);
+    assert.equal(result.query, ':code');
+  });
+
+  it('should require whitespace after mode prefix', () => {
+    const result = window.parseModeFromQuery(':codez rule');
+    assert.equal(result.mode, null);
+    assert.equal(result.query, ':codez rule');
   });
 });
 

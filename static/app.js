@@ -1,11 +1,10 @@
-const DEFAULT_MODEL = 'deepseek-r1:14b';
 const COPY_FEEDBACK_DURATION = 2000;
 const SCROLL_THRESHOLD = 80;
 const SCROLL_STEP = 200;
 const INPUT_MAX_HEIGHT = 200;
 const STREAM_INIT_DELAY = 400;
 
-let currentModel = DEFAULT_MODEL;
+let currentModel = '';
 let abortController = null;
 let nearBottom = true;
 
@@ -222,6 +221,13 @@ async function readStream(reader, decoder, onChunk) {
 
 async function sendMessage(content) {
   if (!content.trim()) return;
+  const { query } = parseModeFromQuery(content);
+  content = query;
+  if (!content.trim()) return;
+  if (!currentModel) {
+    updateLastMessage('Error: no Ollama model available. Run `ollama pull <model>` first.');
+    return;
+  }
 
   if (abortController) abortController.abort();
   abortController = new AbortController();
@@ -265,11 +271,12 @@ async function sendMessage(content) {
 
 function setModel(name) {
   currentModel = name;
-  dropdownToggle.textContent = name;
+  dropdownToggle.textContent = name || 'Select model...';
   dropdownMenu.querySelectorAll('li').forEach(li => {
     li.classList.toggle('active', li.dataset.model === name);
   });
   dropdownMenu.classList.remove('open');
+  sendBtn.disabled = !name;
 }
 
 function classifyModel(name) {
@@ -280,11 +287,12 @@ function classifyModel(name) {
 }
 
 function selectModelForMode(mode, models) {
+  if (models.length === 0) return '';
   const targetMode = mode || 'ask';
   for (const m of models) {
     if (classifyModel(m.name) === targetMode) return m.name;
   }
-  return models[0]?.name || DEFAULT_MODEL;
+  return models[0].name;
 }
 
 function parseModeFromQuery(query) {
@@ -301,10 +309,10 @@ async function loadModels(preferredMode) {
     dropdownMenu.innerHTML = '';
     if (models.length === 0) {
       const li = document.createElement('li');
-      li.textContent = DEFAULT_MODEL + ' (not found)';
-      li.dataset.model = DEFAULT_MODEL;
+      li.textContent = 'No models installed (run ollama pull ...)';
+      li.dataset.model = '';
       dropdownMenu.appendChild(li);
-      setModel(DEFAULT_MODEL);
+      setModel('');
       return;
     }
     models.forEach(m => {
@@ -314,15 +322,14 @@ async function loadModels(preferredMode) {
       li.addEventListener('click', () => setModel(m.name));
       dropdownMenu.appendChild(li);
     });
-    const model = preferredMode ? selectModelForMode(preferredMode, models) : DEFAULT_MODEL;
-    setModel(model);
+    setModel(selectModelForMode(preferredMode, models));
   } catch (e) {
     console.error('Failed to load models:', e);
     const li = document.createElement('li');
-    li.textContent = DEFAULT_MODEL;
-    li.dataset.model = DEFAULT_MODEL;
+    li.textContent = 'Error loading models';
+    li.dataset.model = '';
     dropdownMenu.appendChild(li);
-    setModel(DEFAULT_MODEL);
+    setModel('');
   }
 }
 
