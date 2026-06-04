@@ -3,7 +3,7 @@ set -e
 
 echo "==> Installing dependencies..."
 if command -v pacman &>/dev/null; then
-  sudo pacman -S --noconfirm go webkit2gtk-4.1
+  sudo pacman -S --noconfirm go webkit2gtk-4.1 jq
 fi
 
 echo "==> Building zen-ai..."
@@ -23,7 +23,19 @@ if pgrep -x rofi > /dev/null 2>&1; then
   exit 0
 fi
 
-MODELS=$(curl -sf http://localhost:11434/api/tags | jq -r '.models[].name' 2>/dev/null || true)
+MODELS=""
+if command -v jq &>/dev/null; then
+  MODELS=$(curl -sf http://localhost:11434/api/tags | jq -r '.models[].name' 2>/dev/null || true)
+elif command -v python3 &>/dev/null; then
+  MODELS=$(curl -sf http://localhost:11434/api/tags | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for m in data.get('models', []):
+        print(m['name'])
+except: pass
+" 2>/dev/null || true)
+fi
 
 if [ -n "$MODELS" ]; then
   SELECTION=$(printf '%s\n' "$MODELS" | rofi -dmenu -p "Ask AI" -l 5)
