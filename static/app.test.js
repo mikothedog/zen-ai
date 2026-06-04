@@ -328,6 +328,39 @@ describe('selectModelForMode', () => {
   });
 });
 
+describe('resolveModel', () => {
+  const models = [
+    { name: 'deepseek-r1:14b' },
+    { name: 'llama3:8b' },
+    { name: 'qwen2.5-coder:14b' },
+  ];
+
+  it('should prefer preferredModel over preferredMode', () => {
+    const result = window.resolveModel(models, 'think', 'qwen2.5-coder:14b');
+    assert.equal(result, 'qwen2.5-coder:14b');
+  });
+
+  it('should fall back to preferredMode when preferredModel not in list', () => {
+    const result = window.resolveModel(models, 'think', 'nonexistent:latest');
+    assert.equal(result, 'deepseek-r1:14b');
+  });
+
+  it('should fall back to preferredMode when preferredModel is empty', () => {
+    const result = window.resolveModel(models, 'think', '');
+    assert.equal(result, 'deepseek-r1:14b');
+  });
+
+  it('should fall back to preferredMode when preferredModel is null', () => {
+    const result = window.resolveModel(models, 'ask', null);
+    assert.equal(result, 'llama3:8b');
+  });
+
+  it('should return empty string when models list is empty', () => {
+    const result = window.resolveModel([], 'ask', '');
+    assert.equal(result, '');
+  });
+});
+
 describe('parseModeFromQuery', () => {
   it('should parse :think prefix', () => {
     const result = window.parseModeFromQuery(':think what is life');

@@ -53,7 +53,10 @@ func main() {
 	args := os.Args[1:]
 	model := ""
 	query := ""
-	if len(args) > 0 && args[0] == "--model" && len(args) > 1 {
+	if len(args) > 0 && args[0] == "--model" {
+		if len(args) < 2 {
+			log.Fatal("--model requires a model name")
+		}
 		model = args[1]
 		args = args[2:]
 	}

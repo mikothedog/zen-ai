@@ -32,6 +32,13 @@ function setModel(name) {
   sendBtn.disabled = !name;
 }
 
+function resolveModel(models, preferredMode, preferredModel) {
+  if (preferredModel && models.some(m => m.name === preferredModel)) {
+    return preferredModel;
+  }
+  return selectModelForMode(preferredMode, models);
+}
+
 async function loadModels(preferredMode, preferredModel) {
   try {
     const res = await fetch('/api/models');
@@ -53,11 +60,7 @@ async function loadModels(preferredMode, preferredModel) {
       li.addEventListener('click', () => setModel(m.name));
       dropdownMenu.appendChild(li);
     });
-    if (preferredModel && models.some(m => m.name === preferredModel)) {
-      setModel(preferredModel);
-    } else {
-      setModel(selectModelForMode(preferredMode, models));
-    }
+    setModel(resolveModel(models, preferredMode, preferredModel));
   } catch (e) {
     console.error('Failed to load models:', e);
     const li = document.createElement('li');
