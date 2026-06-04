@@ -50,10 +50,25 @@ func main() {
 
 	time.Sleep(serverStartDelay)
 
-	query := strings.Join(os.Args[1:], " ")
+	args := os.Args[1:]
+	model := ""
+	query := ""
+	if len(args) > 0 && args[0] == "--model" && len(args) > 1 {
+		model = args[1]
+		args = args[2:]
+	}
+	query = strings.Join(args, " ")
+
 	target := "http://localhost:" + defaultPort
+	params := url.Values{}
+	if model != "" {
+		params.Set("model", model)
+	}
 	if query != "" {
-		target += "/?q=" + url.QueryEscape(query)
+		params.Set("q", query)
+	}
+	if len(params) > 0 {
+		target += "/?" + params.Encode()
 	}
 
 	w := webview.New(false)

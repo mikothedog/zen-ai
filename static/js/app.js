@@ -210,9 +210,11 @@ document.addEventListener('click', (e) => {
   }
 });
 
-const rawQuery = (new URLSearchParams(window.location.search)).get('q') || '';
+const params = new URLSearchParams(window.location.search);
+const rawQuery = params.get('q') || '';
+const preferredModel = params.get('model') || '';
 const { query: initialQuery, mode: initialMode } = parseModeFromQuery(rawQuery);
-loadModels(initialMode);
+loadModels(initialMode, preferredModel);
 
 window.addEventListener('beforeunload', () => {
   navigator.sendBeacon('/api/shutdown');
