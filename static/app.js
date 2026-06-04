@@ -46,16 +46,16 @@ function escapeHtml(text) {
 }
 
 function renderMarkdown(text) {
-  let html = escapeHtml(text);
-
   const codeBlocks = [];
   let idx = 0;
-  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+  let html = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
     const placeholder = `\x00CODE${idx}\x00`;
     codeBlocks.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
     idx++;
     return placeholder;
   });
+
+  html = escapeHtml(html);
 
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
@@ -183,7 +183,7 @@ function collectMessages() {
   const messages = [];
   document.querySelectorAll('.message').forEach(el => {
     const role = el.classList.contains('user') ? 'user' : 'assistant';
-    messages.push({ role, content: el.textContent });
+    messages.push({ role, content: el.dataset.content || el.textContent });
   });
   return messages;
 }
@@ -272,7 +272,28 @@ function setModel(name) {
   dropdownMenu.classList.remove('open');
 }
 
-async function loadModels() {
+function classifyModel(name) {
+  const n = name.toLowerCase();
+  if (n.includes('deepseek') || n.includes('r1') || n.includes('reason')) return 'think';
+  if (n.includes('coder') || n.includes('code') || n.includes('instruct')) return 'code';
+  return 'ask';
+}
+
+function selectModelForMode(mode, models) {
+  const targetMode = mode || 'ask';
+  for (const m of models) {
+    if (classifyModel(m.name) === targetMode) return m.name;
+  }
+  return models[0]?.name || DEFAULT_MODEL;
+}
+
+function parseModeFromQuery(query) {
+  const match = query.match(/^:(think|ask|code)\s+/);
+  if (!match) return { query, mode: null };
+  return { query: query.slice(match[0].length), mode: match[1] };
+}
+
+async function loadModels(preferredMode) {
   try {
     const res = await fetch('/api/models');
     if (!res.ok) throw new Error('Failed to fetch models');
@@ -293,7 +314,8 @@ async function loadModels() {
       li.addEventListener('click', () => setModel(m.name));
       dropdownMenu.appendChild(li);
     });
-    setModel(DEFAULT_MODEL);
+    const model = preferredMode ? selectModelForMode(preferredMode, models) : DEFAULT_MODEL;
+    setModel(model);
   } catch (e) {
     console.error('Failed to load models:', e);
     const li = document.createElement('li');
@@ -370,8 +392,9 @@ document.addEventListener('click', (e) => {
   }
 });
 
-const initialQuery = (new URLSearchParams(window.location.search)).get('q') || '';
-loadModels();
+const rawQuery = (new URLSearchParams(window.location.search)).get('q') || '';
+const { query: initialQuery, mode: initialMode } = parseModeFromQuery(rawQuery);
+loadModels(initialMode);
 
 window.addEventListener('beforeunload', () => {
   navigator.sendBeacon('/api/shutdown');

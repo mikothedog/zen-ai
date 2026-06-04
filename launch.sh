@@ -6,7 +6,7 @@ if pgrep -x rofi > /dev/null 2>&1; then
   exit 0
 fi
 
-INPUT=$(rofi -dmenu -p "Ask AI" -l 0)
+INPUT=$(rofi -dmenu -p ':ask/:code/:think' -l 0 -mesg 'type :ask / :code / :think before your query to auto-select model')
 [ -z "$INPUT" ] && exit 0
 
 zen-ai "$INPUT"
