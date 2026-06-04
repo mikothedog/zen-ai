@@ -7,7 +7,7 @@ if command -v pacman &>/dev/null; then
 fi
 
 echo "==> Building zen-ai..."
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 go build -mod=vendor -o zen-ai .
 
 echo "==> Installing binary to /usr/local/bin..."

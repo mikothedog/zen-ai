@@ -1,4 +1,4 @@
-package main
+package zenai
 
 import (
 	"fmt"
@@ -56,7 +56,6 @@ func SearchDuckDuckGo(query string) (string, error) {
 }
 
 func formatResults(query, html string) string {
-	// Check for CAPTCHA or bot detection
 	if strings.Contains(html, "anomaly-modal") || strings.Contains(html, "captcha") {
 		return ""
 	}
