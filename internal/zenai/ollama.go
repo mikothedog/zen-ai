@@ -1,4 +1,4 @@
-package main
+package zenai
 
 import (
 	"encoding/json"
@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func fetchOllamaModels() ([]Model, error) {
-	resp, err := http.Get(ollamaBaseURL + "/api/tags")
+func FetchOllamaModels() ([]Model, error) {
+	resp, err := http.Get(OllamaBaseURL + "/api/tags")
 	if err != nil {
 		return nil, err
 	}
@@ -22,21 +22,21 @@ func fetchOllamaModels() ([]Model, error) {
 
 	var models []Model
 	for _, m := range result.Models {
-		if !strings.Contains(m.Name, excludeModelTag) {
+		if !strings.Contains(m.Name, ExcludeModelTag) {
 			models = append(models, Model{Name: m.Name})
 		}
 	}
 	return models, nil
 }
 
-func streamOllamaChat(w http.ResponseWriter, req ChatRequest) error {
+func StreamOllamaChat(w http.ResponseWriter, req ChatRequest) error {
 	body, _ := json.Marshal(ollamaRequest{
 		Model:    req.Model,
 		Messages: req.Messages,
 		Stream:   true,
 	})
 
-	resp, err := http.Post(ollamaBaseURL+"/api/chat", "application/json", strings.NewReader(string(body)))
+	resp, err := http.Post(OllamaBaseURL+"/api/chat", "application/json", strings.NewReader(string(body)))
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func streamOllamaChat(w http.ResponseWriter, req ChatRequest) error {
 	return nil
 }
 
-func unloadOllamaModel(model string) {
+func UnloadOllamaModel(model string) {
 	if model == "" {
 		return
 	}
@@ -85,5 +85,5 @@ func unloadOllamaModel(model string) {
 		Model:     model,
 		KeepAlive: 0,
 	})
-	http.Post(ollamaBaseURL+"/api/generate", "application/json", strings.NewReader(string(body)))
+	http.Post(OllamaBaseURL+"/api/generate", "application/json", strings.NewReader(string(body)))
 }

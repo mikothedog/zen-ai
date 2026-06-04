@@ -1,4 +1,4 @@
-package main
+package zenai
 
 type Model struct {
 	Name string `json:"name"`

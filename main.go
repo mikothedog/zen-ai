@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"embed"
 	"io/fs"
 	"log"
@@ -10,10 +9,10 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
+
+	"zen-ai/internal/zenai"
 
 	"github.com/webview/webview_go"
 )
@@ -21,22 +20,27 @@ import (
 //go:embed static
 var staticFiles embed.FS
 
+const (
+	webviewWidth  = 900
+	webviewHeight = 700
+)
+
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/models", handleModels)
-	mux.HandleFunc("/api/chat", handleChat)
-	mux.HandleFunc("/api/shutdown", handleShutdown)
+	mux.HandleFunc("/api/models", zenai.HandleModels)
+	mux.HandleFunc("/api/chat", zenai.HandleChat)
+	mux.HandleFunc("/api/shutdown", zenai.HandleShutdown)
 
 	staticFS, _ := fs.Sub(staticFiles, "static")
 	mux.Handle("/", http.FileServer(http.FS(staticFS)))
 
-	ln, err := net.Listen("tcp", ":"+defaultPort)
+	ln, err := net.Listen("tcp", ":"+zenai.DefaultPort)
 	if err != nil {
 		log.Fatal("zen-ai is already running")
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + defaultPort,
+		Addr:    ":" + zenai.DefaultPort,
 		Handler: mux,
 	}
 
@@ -46,9 +50,9 @@ func main() {
 		}
 	}()
 
-	go handleSignals(srv)
+	go zenai.HandleSignals(srv)
 
-	time.Sleep(serverStartDelay)
+	time.Sleep(zenai.ServerStartDelay)
 
 	args := os.Args[1:]
 	model := ""
@@ -62,7 +66,7 @@ func main() {
 	}
 	query = strings.Join(args, " ")
 
-	target := "http://localhost:" + defaultPort
+	target := "http://localhost:" + zenai.DefaultPort
 	params := url.Values{}
 	if model != "" {
 		params.Set("model", model)
@@ -84,21 +88,5 @@ func main() {
 	w.Run()
 	w.Destroy()
 
-	gracefulShutdown(srv)
-}
-
-func handleSignals(srv *http.Server) {
-	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
-	<-sigint
-	gracefulShutdown(srv)
-	os.Exit(0)
-}
-
-func gracefulShutdown(srv *http.Server) {
-	log.Println("Shutting down...")
-	unloadOllamaModel(activeModel)
-	ctx, cancel := context.WithTimeout(context.Background(), serverShutdownWait)
-	defer cancel()
-	srv.Shutdown(ctx)
+	zenai.Shutdown(srv)
 }

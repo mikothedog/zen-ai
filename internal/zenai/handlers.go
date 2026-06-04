@@ -1,20 +1,25 @@
-package main
+package zenai
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
-var activeModel string
+var ActiveModel string
 
-func handleModels(w http.ResponseWriter, r *http.Request) {
+func HandleModels(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	models, err := fetchOllamaModels()
+	models, err := FetchOllamaModels()
 	if err != nil {
 		http.Error(w, "failed to reach Ollama", http.StatusInternalServerError)
 		return
@@ -28,7 +33,7 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(models)
 }
 
-func handleChat(w http.ResponseWriter, r *http.Request) {
+func HandleChat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -39,19 +44,19 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	activeModel = chatReq.Model
+	ActiveModel = chatReq.Model
 
 	enrichWithSearchResults(&chatReq)
 
-	if err := streamOllamaChat(w, chatReq); err != nil {
+	if err := StreamOllamaChat(w, chatReq); err != nil {
 		http.Error(w, "failed to reach Ollama", http.StatusInternalServerError)
 	}
 }
 
-func handleShutdown(w http.ResponseWriter, r *http.Request) {
+func HandleShutdown(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
-	unloadOllamaModel(activeModel)
+	UnloadOllamaModel(ActiveModel)
 }
 
 func enrichWithSearchResults(req *ChatRequest) {
@@ -80,4 +85,20 @@ func enrichWithSearchResults(req *ChatRequest) {
 			break
 		}
 	}
+}
+
+func Shutdown(srv *http.Server) {
+	log.Println("Shutting down...")
+	UnloadOllamaModel(ActiveModel)
+	ctx, cancel := context.WithTimeout(context.Background(), ServerShutdownWait)
+	defer cancel()
+	srv.Shutdown(ctx)
+}
+
+func HandleSignals(srv *http.Server) {
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+	<-sigint
+	Shutdown(srv)
+	os.Exit(0)
 }

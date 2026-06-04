@@ -1,4 +1,4 @@
-package main
+package zenai
 
 import (
 	"fmt"
