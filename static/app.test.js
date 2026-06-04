@@ -36,8 +36,12 @@ beforeEach(() => {
     el.dataset.mathRendered = 'true';
     el.dataset.mathOpts = JSON.stringify(opts);
   };
-  const script = fs.readFileSync(path.join(__dirname, 'app.js'), 'utf-8');
-  window.eval(script);
+  const jsFiles = ['constants.js', 'markdown.js', 'models.js', 'app.js'];
+  let allCode = '';
+  for (const file of jsFiles) {
+    allCode += fs.readFileSync(path.join(__dirname, 'js', file), 'utf-8') + '\n';
+  }
+  window.eval(allCode);
 });
 
 describe('copyToClipboard', () => {
@@ -171,9 +175,10 @@ describe('renderMarkdown', () => {
     assert.ok(result.includes('<a href="https://example.com"'));
   });
 
-  it('should double-escape HTML in code blocks (existing behavior)', () => {
+  it('should escape HTML in code blocks once', () => {
     const result = window.renderMarkdown('```\n<script>alert(1)</script>\n```');
-    assert.ok(result.includes('&amp;lt;script'));
+    assert.ok(result.includes('&lt;script'));
+    assert.ok(!result.includes('&amp;lt;'));
   });
 
   it('should render headings', () => {
@@ -238,6 +243,132 @@ describe('renderMath', () => {
     const el = document.createElement('div');
     window.renderMath(el);
     window.renderMathInElement = orig;
+  });
+});
+
+describe('classifyModel', () => {
+  it('should classify deepseek/r1 models as think', () => {
+    assert.equal(window.classifyModel('deepseek-r1:14b'), 'think');
+    assert.equal(window.classifyModel('deepseek-r1:latest'), 'think');
+    assert.equal(window.classifyModel('r1-distill-llama'), 'think');
+    assert.equal(window.classifyModel('reasoning-model'), 'think');
+  });
+
+  it('should classify coder/code models as code', () => {
+    assert.equal(window.classifyModel('qwen2.5-coder:14b'), 'code');
+    assert.equal(window.classifyModel('codegemma'), 'code');
+    assert.equal(window.classifyModel('llama-3-instruct'), 'code');
+  });
+
+  it('should classify anything else as ask', () => {
+    assert.equal(window.classifyModel('gemma:7b'), 'ask');
+    assert.equal(window.classifyModel('llama3:8b'), 'ask');
+    assert.equal(window.classifyModel('mistral'), 'ask');
+    assert.equal(window.classifyModel('qwen3:8b'), 'ask');
+  });
+});
+
+describe('selectModelForMode', () => {
+  it('should pick a think model for think mode', () => {
+    const models = [
+      { name: 'llama3:8b' },
+      { name: 'deepseek-r1:14b' },
+      { name: 'qwen2.5-coder:14b' },
+    ];
+    const result = window.selectModelForMode('think', models);
+    assert.equal(result, 'deepseek-r1:14b');
+  });
+
+  it('should pick a code model for code mode', () => {
+    const models = [
+      { name: 'llama3:8b' },
+      { name: 'deepseek-r1:14b' },
+      { name: 'qwen2.5-coder:14b' },
+    ];
+    const result = window.selectModelForMode('code', models);
+    assert.equal(result, 'qwen2.5-coder:14b');
+  });
+
+  it('should pick first ask model for ask mode', () => {
+    const models = [
+      { name: 'gemma:7b' },
+      { name: 'llama3:8b' },
+    ];
+    const result = window.selectModelForMode('ask', models);
+    assert.equal(result, 'gemma:7b');
+  });
+
+  it('should fallback to first model if no match', () => {
+    const models = [{ name: 'llama3:8b' }];
+    const result = window.selectModelForMode('code', models);
+    assert.equal(result, 'llama3:8b');
+  });
+
+  it('should default to ask when mode is null', () => {
+    const models = [
+      { name: 'deepseek-r1:14b' },
+      { name: 'gemma:7b' },
+    ];
+    const result = window.selectModelForMode(null, models);
+    assert.equal(result, 'gemma:7b');
+  });
+
+  it('should return empty string when no models', () => {
+    const result = window.selectModelForMode('ask', []);
+    assert.equal(result, '');
+  });
+
+  it('should pick from models list without hardcoded names', () => {
+    const models = [
+      { name: 'custom-model:latest' },
+      { name: 'another-model:7b' },
+    ];
+    const result = window.selectModelForMode(null, models);
+    assert.equal(result, 'custom-model:latest');
+  });
+});
+
+describe('parseModeFromQuery', () => {
+  it('should parse :think prefix', () => {
+    const result = window.parseModeFromQuery(':think what is life');
+    assert.equal(result.mode, 'think');
+    assert.equal(result.query, 'what is life');
+  });
+
+  it('should parse :ask prefix', () => {
+    const result = window.parseModeFromQuery(':ask hello world');
+    assert.equal(result.mode, 'ask');
+    assert.equal(result.query, 'hello world');
+  });
+
+  it('should parse :code prefix', () => {
+    const result = window.parseModeFromQuery(':code write js');
+    assert.equal(result.mode, 'code');
+    assert.equal(result.query, 'write js');
+  });
+
+  it('should return null mode when no prefix', () => {
+    const result = window.parseModeFromQuery('hello world');
+    assert.equal(result.mode, null);
+    assert.equal(result.query, 'hello world');
+  });
+
+  it('should return null mode for empty string', () => {
+    const result = window.parseModeFromQuery('');
+    assert.equal(result.mode, null);
+    assert.equal(result.query, '');
+  });
+
+  it('should not parse prefix without trailing space', () => {
+    const result = window.parseModeFromQuery(':code');
+    assert.equal(result.mode, null);
+    assert.equal(result.query, ':code');
+  });
+
+  it('should require whitespace after mode prefix', () => {
+    const result = window.parseModeFromQuery(':codez rule');
+    assert.equal(result.mode, null);
+    assert.equal(result.query, ':codez rule');
   });
 });
 
