@@ -36,8 +36,12 @@ beforeEach(() => {
     el.dataset.mathRendered = 'true';
     el.dataset.mathOpts = JSON.stringify(opts);
   };
-  const script = fs.readFileSync(path.join(__dirname, 'app.js'), 'utf-8');
-  window.eval(script);
+  const jsFiles = ['constants.js', 'markdown.js', 'models.js', 'app.js'];
+  let allCode = '';
+  for (const file of jsFiles) {
+    allCode += fs.readFileSync(path.join(__dirname, 'js', file), 'utf-8') + '\n';
+  }
+  window.eval(allCode);
 });
 
 describe('copyToClipboard', () => {
