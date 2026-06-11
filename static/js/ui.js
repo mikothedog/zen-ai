@@ -1,4 +1,5 @@
-var nearBottom = true;
+let nearBottom = true;
+window.nearBottom = nearBottom;
 
 function isNearBottom() {
   return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight - SCROLL_THRESHOLD;
@@ -6,15 +7,18 @@ function isNearBottom() {
 
 function scrollToBottomForce() {
   nearBottom = true;
+  window.nearBottom = nearBottom;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 chatContainer.addEventListener('wheel', () => {
   nearBottom = false;
+  window.nearBottom = nearBottom;
 });
 
 chatContainer.addEventListener('scroll', () => {
   nearBottom = isNearBottom();
+  window.nearBottom = nearBottom;
 });
 
 function addCodeCopyButtons(el) {
