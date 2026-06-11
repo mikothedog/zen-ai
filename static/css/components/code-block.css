@@ -1,0 +1,40 @@
+.code-block-wrap {
+  position: relative;
+  margin: 0.5rem 0;
+}
+
+.code-block-wrap pre {
+  margin: 0;
+}
+
+.copy-code-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--overlay);
+  color: var(--subtle);
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.code-block-wrap:hover .copy-code-btn {
+  opacity: 1;
+}
+
+.copy-code-btn:hover {
+  color: var(--text);
+  background: var(--muted);
+}
+
+.copy-code-btn.copied {
+  color: var(--foam);
+  border-color: var(--foam);
+  opacity: 1;
+}
