@@ -208,6 +208,33 @@ header h1 {
   text-decoration: underline;
 }
 
+.message table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.message th, .message td {
+  border: 1px solid var(--overlay);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.message th {
+  background: var(--overlay);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.message td {
+  color: var(--text);
+}
+
+.message tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--overlay) 50%, transparent);
+}
+
 .code-block-wrap {
   position: relative;
   margin: 0.5rem 0;

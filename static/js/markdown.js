@@ -29,6 +29,35 @@ function renderMarkdown(text) {
 
   html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" class="external-link">$1</a>');
 
+  // Table support
+  html = html.replace(/^\|.+\|\n\|[\s|:-]+\|\n(?:\|.+\|\n?)*/gm, (block) => {
+    const lines = block.trim().split('\n');
+    if (lines.length < 2) return block;
+    const headers = lines[0].split('|').slice(1, -1).map(c => c.trim());
+    const aligns = lines[1].split('|').slice(1, -1).map(a => {
+      const t = a.trim();
+      if (t.startsWith(':') && t.endsWith(':')) return 'center';
+      if (t.endsWith(':')) return 'right';
+      return 'left';
+    });
+    let table = '<table>\n<thead>\n<tr>';
+    headers.forEach((h, i) => {
+      table += `<th align="${aligns[i] || 'left'}">${h}</th>`;
+    });
+    table += '</tr>\n</thead>\n<tbody>\n';
+    for (let r = 2; r < lines.length; r++) {
+      if (!lines[r].trim()) continue;
+      const cells = lines[r].split('|').slice(1, -1).map(c => c.trim());
+      table += '<tr>';
+      cells.forEach((c, i) => {
+        table += `<td align="${aligns[i] || 'left'}">${c}</td>`;
+      });
+      table += '</tr>\n';
+    }
+    table += '</tbody>\n</table>';
+    return table;
+  });
+
   html = html.replace(/\x00CODE(\d+)\x00/g, (_, i) => {
     return codeBlocks[parseInt(i)] || _;
   });

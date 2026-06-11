@@ -221,6 +221,24 @@ describe('renderMarkdown', () => {
     assert.ok(result.includes('\\[ \\boxed{100} \\]'));
     assert.ok(result.includes('<pre><code>'));
   });
+
+  it('should render tables with table/thead/tbody tags', () => {
+    const input = '| A | B |\n| :--- | :---: |\n| 1 | 2 |\n| 3 | 4 |';
+    const result = window.renderMarkdown(input);
+    assert.ok(result.includes('<table>'));
+    assert.ok(result.includes('<thead>'));
+    assert.ok(result.includes('<tbody>'));
+    assert.ok(result.includes('<th align="left">A</th>'));
+    assert.ok(result.includes('<th align="center">B</th>'));
+    assert.ok(result.includes('<td align="left">1</td>'));
+    assert.ok(result.includes('<td align="center">2</td>'));
+  });
+
+  it('should not wrap tables in <p> tags', () => {
+    const result = window.renderMarkdown('| X | Y |\n| :--- | :--- |\n| a | b |');
+    assert.ok(result.includes('<table>'));
+    assert.ok(!result.includes('<p><table>'));
+  });
 });
 
 describe('renderMath', () => {
