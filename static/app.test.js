@@ -9,6 +9,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let dom, window, document;
 
+function setChatScroll(scrollTop, scrollHeight, clientHeight) {
+  window.chatContainer.scrollTop = scrollTop;
+  Object.defineProperty(window.chatContainer, 'scrollHeight', { value: scrollHeight, configurable: true });
+  Object.defineProperty(window.chatContainer, 'clientHeight', { value: clientHeight, configurable: true });
+}
+
 before(() => {
   dom = new JSDOM(`
     <!DOCTYPE html>
@@ -36,44 +42,12 @@ beforeEach(() => {
     el.dataset.mathRendered = 'true';
     el.dataset.mathOpts = JSON.stringify(opts);
   };
-  const jsFiles = ['constants.js', 'markdown.js', 'models.js', 'app.js'];
+  const jsFiles = ['constants.js', 'dom.js', 'clipboard.js', 'markdown.js', 'ui.js', 'models.js', 'app.js'];
   let allCode = '';
   for (const file of jsFiles) {
     allCode += fs.readFileSync(path.join(__dirname, 'js', file), 'utf-8') + '\n';
   }
   window.eval(allCode);
-});
-
-describe('copyToClipboard', () => {
-  it('should set button text to Copied! and add copied class', async () => {
-    const btn = document.createElement('button');
-    window.navigator.clipboard.writeText = async (text) => {
-      assert.equal(text, 'hello');
-    };
-    await window.copyToClipboard('hello', btn);
-    assert.equal(btn.textContent, 'Copied!');
-    assert.ok(btn.classList.contains('copied'));
-  });
-
-  it('should set button text to Failed on clipboard error', async () => {
-    const btn = document.createElement('button');
-    window.navigator.clipboard.writeText = async () => {
-      throw new Error('fail');
-    };
-    await window.copyToClipboard('hello', btn);
-    assert.equal(btn.textContent, 'Failed');
-  });
-
-  it('should reset button text after 2s', async () => {
-    const btn = document.createElement('button');
-    window.navigator.clipboard.writeText = async () => {};
-    await window.copyToClipboard('hello', btn);
-    assert.equal(btn.textContent, 'Copied!');
-    assert.ok(btn.classList.contains('copied'));
-    await new Promise(r => setTimeout(r, 2100));
-    assert.equal(btn.textContent, 'Copy');
-    assert.ok(!btn.classList.contains('copied'));
-  });
 });
 
 describe('addCodeCopyButtons', () => {
@@ -434,5 +408,131 @@ describe('escapeHtml', () => {
 
   it('should not double-escape already escaped text', () => {
     assert.equal(window.escapeHtml('&lt;'), '&amp;lt;');
+  });
+});
+
+describe('clipboard', () => {
+  it('should set button text to Copied! and add copied class', async () => {
+    const btn = document.createElement('button');
+    window.navigator.clipboard.writeText = async (text) => {
+      assert.equal(text, 'hello');
+    };
+    await window.copyToClipboard('hello', btn);
+    assert.equal(btn.textContent, 'Copied!');
+    assert.ok(btn.classList.contains('copied'));
+  });
+
+  it('should set button text to Failed on clipboard error', async () => {
+    const btn = document.createElement('button');
+    window.navigator.clipboard.writeText = async () => {
+      throw new Error('fail');
+    };
+    await window.copyToClipboard('hello', btn);
+    assert.equal(btn.textContent, 'Failed');
+  });
+
+  it('should reset button text after feedback duration', async () => {
+    const btn = document.createElement('button');
+    window.navigator.clipboard.writeText = async () => {};
+    await window.copyToClipboard('hello', btn);
+    assert.equal(btn.textContent, 'Copied!');
+    await new Promise(r => setTimeout(r, 2100));
+    assert.equal(btn.textContent, 'Copy');
+    assert.ok(!btn.classList.contains('copied'));
+  });
+});
+
+describe('scroll behavior', () => {
+  it('should detect near bottom when within threshold', () => {
+    setChatScroll(400, 500, 100);
+    assert.ok(window.isNearBottom());
+  });
+
+  it('should detect not near bottom when far from threshold', () => {
+    setChatScroll(100, 500, 100);
+    assert.ok(!window.isNearBottom());
+  });
+
+  it('should scroll to bottom on force', () => {
+    setChatScroll(100, 500, 100);
+    window.scrollToBottomForce();
+    assert.equal(window.chatContainer.scrollTop, 500);
+    assert.equal(window.nearBottom, true);
+  });
+});
+
+describe('addMessage', () => {
+  it('should create user message with text content', () => {
+    const el = window.addMessage('user', 'hello');
+    assert.ok(el.classList.contains('user'));
+    assert.equal(el.textContent, 'hello');
+    assert.equal(el.dataset.content, 'hello');
+  });
+
+  it('should create assistant message with rendered markdown', () => {
+    const el = window.addMessage('assistant', '**bold** text');
+    assert.ok(el.classList.contains('assistant'));
+    assert.ok(el.innerHTML.includes('<strong>bold</strong>'));
+    assert.equal(el.dataset.content, '**bold** text');
+  });
+
+  it('should append to messages container', () => {
+    const before = window.messagesEl.children.length;
+    window.addMessage('user', 'test');
+    assert.equal(window.messagesEl.children.length, before + 1);
+  });
+});
+
+describe('collectMessages', () => {
+  it('should collect messages from DOM', () => {
+    window.messagesEl.innerHTML = '';
+    window.addMessage('user', 'hi');
+    window.addMessage('assistant', '**hello**');
+    const msgs = window.collectMessages();
+    assert.equal(msgs.length, 2);
+    assert.equal(msgs[0].role, 'user');
+    assert.equal(msgs[0].content, 'hi');
+    assert.equal(msgs[1].role, 'assistant');
+    assert.equal(msgs[1].content, '**hello**');
+  });
+});
+
+describe('setLoading', () => {
+  it('should show loading', () => {
+    window.setLoading(true);
+    assert.ok(!window.loadingEl.classList.contains('hidden'));
+  });
+
+  it('should hide loading', () => {
+    window.setLoading(false);
+    assert.ok(window.loadingEl.classList.contains('hidden'));
+  });
+});
+
+describe('toggleInput', () => {
+  it('should disable input and send', () => {
+    window.toggleInput(true);
+    assert.ok(window.inputEl.disabled);
+    assert.ok(window.sendBtn.disabled);
+  });
+
+  it('should enable input and send', () => {
+    window.toggleInput(false);
+    assert.ok(!window.inputEl.disabled);
+    assert.ok(!window.sendBtn.disabled);
+  });
+});
+
+describe('dropdown setup', () => {
+  it('should be called during init and setupDropdown is a function', () => {
+    assert.equal(typeof window.setupDropdown, 'function');
+  });
+
+  it('should toggle open class on dropdown menu', () => {
+    window.dropdownMenu.classList.remove('open');
+    window.dropdownMenu.classList.toggle('open');
+    assert.ok(window.dropdownMenu.classList.contains('open'));
+    window.dropdownMenu.classList.toggle('open');
+    assert.ok(!window.dropdownMenu.classList.contains('open'));
   });
 });

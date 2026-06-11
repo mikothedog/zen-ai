@@ -29,7 +29,6 @@ function renderMarkdown(text) {
 
   html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" class="external-link">$1</a>');
 
-  // Table support
   html = html.replace(/^\|.+\|\n\|[\s|:-]+\|\n(?:\|.+\|\n?)*/gm, (block) => {
     const lines = block.trim().split('\n');
     if (lines.length < 2) return block;
@@ -69,61 +68,4 @@ function renderMarkdown(text) {
     if (t.startsWith('<')) return t;
     return `<p>${t}</p>`;
   }).join('\n');
-}
-
-async function copyToClipboard(text, button) {
-  try {
-    await navigator.clipboard.writeText(text);
-    button.textContent = 'Copied!';
-    button.classList.add('copied');
-    setTimeout(() => {
-      button.textContent = 'Copy';
-      button.classList.remove('copied');
-    }, COPY_FEEDBACK_DURATION);
-  } catch {
-    button.textContent = 'Failed';
-  }
-}
-
-function addCodeCopyButtons(el) {
-  el.querySelectorAll('pre').forEach(pre => {
-    if (pre.parentElement.classList.contains('code-block-wrap')) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'code-block-wrap';
-    pre.parentNode.insertBefore(wrap, pre);
-    wrap.appendChild(pre);
-    const btn = document.createElement('button');
-    btn.className = 'copy-code-btn';
-    btn.textContent = 'Copy';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      copyToClipboard(pre.textContent, btn);
-    });
-    wrap.appendChild(btn);
-  });
-}
-
-function addMessageActions(el) {
-  if (el.querySelector('.message-actions')) return;
-  const actions = document.createElement('div');
-  actions.className = 'message-actions';
-  const copyBtn = document.createElement('button');
-  const content = el.dataset.content || el.textContent;
-  copyBtn.textContent = 'Copy';
-  copyBtn.addEventListener('click', () => copyToClipboard(content, copyBtn));
-  actions.appendChild(copyBtn);
-  el.appendChild(actions);
-}
-
-function renderMath(el) {
-  if (typeof renderMathInElement !== 'function') return;
-  try {
-    renderMathInElement(el, {
-      delimiters: [
-        { left: '\\[', right: '\\]', display: true },
-        { left: '\\(', right: '\\)', display: false },
-      ],
-      ignoredTags: ['pre', 'code'],
-    });
-  } catch (_) {}
 }

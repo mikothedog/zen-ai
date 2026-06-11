@@ -1,27 +1,4 @@
 let abortController = null;
-let nearBottom = true;
-
-function isNearBottom() {
-  return chatContainer.scrollTop + chatContainer.clientHeight >= chatContainer.scrollHeight - SCROLL_THRESHOLD;
-}
-
-function scrollToBottom() {
-  if (!isNearBottom()) return;
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function scrollToBottomForce() {
-  nearBottom = true;
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-chatContainer.addEventListener('wheel', () => {
-  nearBottom = false;
-});
-
-chatContainer.addEventListener('scroll', () => {
-  nearBottom = isNearBottom();
-});
 
 function addMessage(role, content) {
   const el = document.createElement('div');
@@ -35,13 +12,13 @@ function addMessage(role, content) {
   } else {
     el.textContent = content;
   }
-  chatEl.appendChild(el);
+  messagesEl.appendChild(el);
   if (role === 'user') scrollToBottomForce();
   return el;
 }
 
 function updateLastMessage(content) {
-  let last = chatEl.lastElementChild;
+  let last = messagesEl.lastElementChild;
   if (!last || !last.classList.contains('assistant')) {
     last = addMessage('assistant', '');
   }
@@ -51,15 +28,6 @@ function updateLastMessage(content) {
   addCodeCopyButtons(last);
   addMessageActions(last);
   if (nearBottom) scrollToBottomForce();
-}
-
-function setLoading(show) {
-  loadingEl.classList.toggle('hidden', !show);
-}
-
-function toggleInput(disabled) {
-  inputEl.disabled = disabled;
-  sendBtn.disabled = disabled;
 }
 
 function collectMessages() {
@@ -181,7 +149,6 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         e.stopPropagation();
         chatContainer.scrollTop += SCROLL_STEP;
-        nearBottom = isNearBottom();
         break;
       case 'g':
         e.preventDefault();
@@ -214,6 +181,8 @@ const params = new URLSearchParams(window.location.search);
 const rawQuery = params.get('q') || '';
 const preferredModel = params.get('model') || '';
 const { query: initialQuery, mode: initialMode } = parseModeFromQuery(rawQuery);
+
+setupDropdown();
 loadModels(initialMode, preferredModel);
 
 window.addEventListener('beforeunload', () => {

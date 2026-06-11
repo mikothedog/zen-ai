@@ -1,3 +1,5 @@
+/* ── Layout ── */
+
 header {
   display: flex;
   align-items: center;
@@ -12,6 +14,57 @@ header h1 {
   font-weight: 600;
   color: var(--rose);
 }
+
+footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--overlay);
+  flex-shrink: 0;
+}
+
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 12px 1rem 0;
+  display: flex;
+  flex-direction: column;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--overlay) transparent;
+}
+
+#chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#chat::-webkit-scrollbar-thumb {
+  background: var(--overlay);
+  border-radius: 4px;
+}
+
+#messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#loading {
+  align-self: flex-start;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Model Dropdown ── */
 
 .dropdown {
   position: relative;
@@ -82,35 +135,11 @@ header h1 {
   background: var(--overlay);
 }
 
-#chat {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 1rem 12px 1rem 0;
-  display: flex;
-  flex-direction: column;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: var(--overlay) transparent;
-}
+/* ── Chat Messages ── */
 
-#chat::-webkit-scrollbar {
-  width: 8px;
-}
-
-#chat::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-#chat::-webkit-scrollbar-thumb {
-  background: var(--overlay);
-  border-radius: 4px;
-}
-
-#messages {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .message {
@@ -122,11 +151,6 @@ header h1 {
   animation: fadeIn 0.2s ease;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .message.user {
@@ -142,6 +166,8 @@ header h1 {
   border: 1px solid var(--overlay);
   border-bottom-left-radius: 4px;
 }
+
+/* ── Markdown Content ── */
 
 .message p {
   margin-bottom: 0.5rem;
@@ -169,6 +195,23 @@ header h1 {
 .message h2 { font-size: 1.125rem; }
 .message h3 { font-size: 1rem; }
 
+.message strong {
+  color: var(--foam);
+}
+
+.message em {
+  color: var(--iris);
+}
+
+.message a {
+  color: var(--pine);
+  text-decoration: none;
+}
+
+.message a:hover {
+  text-decoration: underline;
+}
+
 .message code {
   background: var(--overlay);
   padding: 0.125rem 0.375rem;
@@ -191,22 +234,7 @@ header h1 {
   font-size: 0.8125rem;
 }
 
-.message strong {
-  color: var(--foam);
-}
-
-.message em {
-  color: var(--iris);
-}
-
-.message a {
-  color: var(--pine);
-  text-decoration: none;
-}
-
-.message a:hover {
-  text-decoration: underline;
-}
+/* ── Tables ── */
 
 .message table {
   border-collapse: collapse;
@@ -234,6 +262,8 @@ header h1 {
 .message tr:nth-child(even) td {
   background: color-mix(in srgb, var(--overlay) 50%, transparent);
 }
+
+/* ── Code Block Copy Button ── */
 
 .code-block-wrap {
   position: relative;
@@ -276,6 +306,8 @@ header h1 {
   opacity: 1;
 }
 
+/* ── Message Actions ── */
+
 .message-actions {
   display: flex;
   gap: 4px;
@@ -311,11 +343,7 @@ header h1 {
   border-color: var(--foam);
 }
 
-#loading {
-  align-self: flex-start;
-  padding: 0.75rem 1rem;
-  margin-top: 0.5rem;
-}
+/* ── Loading Indicator ── */
 
 .dot-pulse {
   display: flex;
@@ -350,17 +378,7 @@ header h1 {
   40% { opacity: 1; transform: scale(1.1); }
 }
 
-.hidden {
-  display: none !important;
-}
-
-footer {
-  display: flex;
-  gap: 0.5rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--overlay);
-  flex-shrink: 0;
-}
+/* ── Input & Send ── */
 
 #input {
   flex: 1;
