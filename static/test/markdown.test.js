@@ -116,6 +116,17 @@ describe('renderMarkdown', () => {
     assert.ok(result.includes('<table>'));
     assert.ok(!result.includes('<p><table>'));
   });
+
+  it('should pass $...$ inline math through for KaTeX', () => {
+    const result = window.renderMarkdown('$\\rightarrow$');
+    assert.ok(result.includes('$\\rightarrow$'));
+    assert.ok(!result.includes('&gt;'));
+  });
+
+  it('should pass $$...$$ display math through for KaTeX', () => {
+    const result = window.renderMarkdown('$$\\sum_{i=1}^n i$$');
+    assert.ok(result.includes('$$\\sum_{i=1}^n i$$'));
+  });
 });
 
 describe('renderMath', () => {
@@ -126,7 +137,9 @@ describe('renderMath', () => {
     assert.equal(el.dataset.mathRendered, 'true');
     const opts = JSON.parse(el.dataset.mathOpts);
     assert.deepEqual(opts.delimiters, [
+      { left: '$$', right: '$$', display: true },
       { left: '\\[', right: '\\]', display: true },
+      { left: '$', right: '$', display: false },
       { left: '\\(', right: '\\)', display: false },
     ]);
     assert.deepEqual(opts.ignoredTags, ['pre', 'code']);

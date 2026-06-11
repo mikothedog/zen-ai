@@ -56,7 +56,9 @@ function renderMath(el) {
   try {
     renderMathInElement(el, {
       delimiters: [
+        { left: '$$', right: '$$', display: true },
         { left: '\\[', right: '\\]', display: true },
+        { left: '$', right: '$', display: false },
         { left: '\\(', right: '\\)', display: false },
       ],
       ignoredTags: ['pre', 'code'],
