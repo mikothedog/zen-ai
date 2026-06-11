@@ -71,11 +71,4 @@ async function loadModels(preferredMode, preferredModel) {
   }
 }
 
-dropdownToggle.addEventListener('click', (e) => {
-  e.stopPropagation();
-  dropdownMenu.classList.toggle('open');
-});
 
-document.addEventListener('click', () => {
-  dropdownMenu.classList.remove('open');
-});

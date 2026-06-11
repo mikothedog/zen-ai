@@ -1,0 +1,40 @@
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 12px 1rem 0;
+  display: flex;
+  flex-direction: column;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--overlay) transparent;
+}
+
+#chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#chat::-webkit-scrollbar-thumb {
+  background: var(--overlay);
+  border-radius: 4px;
+}
+
+#messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#loading {
+  align-self: flex-start;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.hidden {
+  display: none !important;
+}
