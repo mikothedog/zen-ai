@@ -93,6 +93,18 @@ describe('renderMarkdown', () => {
     assert.ok(result.includes('<li>item 2</li>'));
   });
 
+  it('should render * and + list items', () => {
+    const r1 = window.renderMarkdown('* item');
+    const r2 = window.renderMarkdown('+ item');
+    assert.ok(r1.includes('<li>item</li>'));
+    assert.ok(r2.includes('<li>item</li>'));
+  });
+
+  it('should render list items with multiple spaces after marker', () => {
+    const result = window.renderMarkdown('*   indented item');
+    assert.ok(result.includes('<li>indented item</li>'));
+  });
+
   it('should render paragraphs for plain text', () => {
     const result = window.renderMarkdown('hello\nworld');
     assert.ok(result.includes('<p>hello\nworld</p>'));
