@@ -62,9 +62,28 @@ describe('renderMarkdown', () => {
     const h1 = window.renderMarkdown('# heading 1');
     const h2 = window.renderMarkdown('## heading 2');
     const h3 = window.renderMarkdown('### heading 3');
+    const h4 = window.renderMarkdown('#### heading 4');
+    const h5 = window.renderMarkdown('##### heading 5');
+    const h6 = window.renderMarkdown('###### heading 6');
     assert.ok(h1.includes('<h1>heading 1</h1>'));
     assert.ok(h2.includes('<h2>heading 2</h2>'));
     assert.ok(h3.includes('<h3>heading 3</h3>'));
+    assert.ok(h4.includes('<h4>heading 4</h4>'));
+    assert.ok(h5.includes('<h5>heading 5</h5>'));
+    assert.ok(h6.includes('<h6>heading 6</h6>'));
+  });
+
+  it('should render horizontal rules from ---', () => {
+    const result = window.renderMarkdown('before\n\n---\n\nafter');
+    assert.ok(result.includes('<hr>'));
+    assert.ok(!result.includes('<p><hr>'));
+  });
+
+  it('should render horizontal rules from *** and ___', () => {
+    const result1 = window.renderMarkdown('***');
+    const result2 = window.renderMarkdown('___');
+    assert.ok(result1.includes('<hr>'));
+    assert.ok(result2.includes('<hr>'));
   });
 
   it('should render unordered lists', () => {
