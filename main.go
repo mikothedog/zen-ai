@@ -34,7 +34,7 @@ func main() {
 	staticFS, _ := fs.Sub(staticFiles, "static")
 	mux.Handle("/", http.FileServer(http.FS(staticFS)))
 
-	ln, err := net.Listen("tcp", ":"+zenai.DefaultPort)
+	ln, err := net.Listen("tcp", "127.0.0.1:"+zenai.DefaultPort)
 	if err != nil {
 		log.Fatal("zen-ai is already running")
 	}
