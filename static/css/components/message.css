@@ -93,9 +93,13 @@
   font-size: 0.8125rem;
 }
 
-.message table {
-  border-collapse: collapse;
+.message .table-wrapper {
+  overflow-x: auto;
   margin: 0.5rem 0;
+}
+
+.message .table-wrapper table {
+  border-collapse: collapse;
   width: 100%;
   font-size: 0.875rem;
 }

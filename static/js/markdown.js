@@ -44,7 +44,7 @@ function renderMarkdown(text) {
       if (t.endsWith(':')) return 'right';
       return 'left';
     });
-    let table = '<table>\n<thead>\n<tr>';
+    let table = '<div class="table-wrapper"><table>\n<thead>\n<tr>';
     headers.forEach((h, i) => {
       table += `<th align="${aligns[i] || 'left'}">${h}</th>`;
     });
@@ -58,7 +58,7 @@ function renderMarkdown(text) {
       });
       table += '</tr>\n';
     }
-    table += '</tbody>\n</table>';
+    table += '</tbody>\n</table></div>';
     return table;
   });
 
